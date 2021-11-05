@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Run superkojiman/pwnbox container in docker.
+# Run pwnbox container in docker.
 # 
 # Store your .gdbinit, .radare2rc, .vimrc, etc in a ./rc directory and 
 # the contents will be copied to /root/ in the container.
@@ -30,7 +30,7 @@ fi
 ctf_name=${1}
 
 # Create a volume for this container 
-docker create -v /root/work --name ${ctf_name}_data superkojiman/pwnbox
+docker create -v /root/work --name ${ctf_name}_data pwnbox
 
 # Get the volume name for the delete script
 vol_name=`docker inspect ${ctf_name}_data | jq '.[].Mounts[].Name' | sed 's/\"//g'`
@@ -44,7 +44,7 @@ docker run -it \
     --name ${ctf_name} \
     --volumes-from ${ctf_name}_data \
     --privileged \
-    superkojiman/pwnbox
+    pwnbox
 
 # Tar config files in rc and extract it into the container
 if [[ -d rc ]]; then
@@ -64,38 +64,53 @@ else
     echo -e "${RED}No rc directory found. Nothing to copy to container.${RESET}"
 fi
 
-# Create stop/rm script for container
-cat << EOF > ${ctf_name}-stop.sh
+# Create script to start/delete container
+cat << EOF > ${ctf_name}.sh
 #!/bin/bash
-echo "Removing ${ctf_name} containers and volumes"
-docker stop ${ctf_name}
-docker rm ${ctf_name}
-docker rm ${ctf_name}_data
-docker volume rm ${vol_name}
-rm -f ${ctf_name}-attach.sh
-rm -f ${ctf_name}-stop.sh
-EOF
-chmod 755 ${ctf_name}-stop.sh
 
-# Create a script to quickly re-attach to the container's tmux
-cat << EOF > ${ctf_name}-attach.sh
-#!/bin/bash
-docker exec -it ${ctf_name} tmux ls > /dev/null 2>&1
-if [[ \$? -eq 0 ]]; then 
+if [[ "\$1" == "-h" ]] || [[ "\$1" == "--help" ]];then
+  echo "\
+Usage:
+To run:
+\$0
+To delete all files:
+\$0 delete"
+fi
+
+if [[ -z "\$1" ]] || [[ "\$1" == "run" ]]; then
+  if docker exec -it ${ctf_name} tmux ls >/dev/null 2>&1; then
     docker exec -it ${ctf_name} tmux -u a -d -t ${ctf_name}
-else
+  else
     echo "No tmux session found. Starting a new one."
     docker exec -it ${ctf_name} tmux -u new -s ${ctf_name} -c /root/work
-fi 
+  fi
+fi
+
+if [ "\$1" == "delete" ]; then
+  echo "Removing ${ctf_name} containers and volumes"
+  read -ep "You sure?(y/n): " confirm
+  [[ \$confirm =~ ^[Nn]$ ]] && { echo "Exiting...";exit 0; }
+  docker stop ${ctf_name}
+  docker rm ${ctf_name}
+  docker rm ${ctf_name}_data
+  docker volume rm ${vol_name}
+  rm -f ${ctf_name}.sh
+  echo "All files deleted"
+fi
 EOF
-chmod 755 ${ctf_name}-attach.sh
+chmod 755 ${ctf_name}.sh
 
 # Drop into a tmux shell
-echo -e "${GREEN}                         ______               ${RESET}"
-echo -e "${GREEN}___________      ___________  /___________  __${RESET}"
-echo -e "${GREEN}___  __ \\_ | /| / /_  __ \\_  __ \\  __ \\_  |/_/${RESET}"
-echo -e "${GREEN}__  /_/ /_ |/ |/ /_  / / /  /_/ / /_/ /_>  <  ${RESET}"
-echo -e "${GREEN}_  .___/____/|__/ /_/ /_//_.___/\\____//_/|_|  ${RESET}"
-echo -e "${GREEN}/_/                           by superkojiman  ${RESET}"
-echo ""
-docker exec -it ${ctf_name} tmux -u new -s ${ctf_name} -c /root/work
+echo -e "\
+${GREEN}                         ______               ${RESET}
+${GREEN}___________      ___________  /___________  __${RESET}
+${GREEN}___  __ \\_ | /| / /_  __ \\_  __ \\  __ \\_  |/_/${RESET}
+${GREEN}__  /_/ /_ |/ |/ /_  / / /  /_/ / /_/ /_>  <  ${RESET}
+${GREEN}_  .___/____/|__/ /_/ /_//_.___/\\____//_/|_|  ${RESET}
+${GREEN}/_/                           by superkojiman  ${RESET}
+${GREEN}                            forked by R3tr074  ${RESET}
+"
+
+echo -e "Docker created with success, run ${GREEN}${ctf_name}.sh${RESET} to start"
+
+#docker exec -it ${ctf_name} tmux -u new -s ${ctf_name} -c /root/work
