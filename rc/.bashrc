@@ -16,7 +16,7 @@ GREY=$ESC"37m"
 WHITE=$ESC"97m"
 PS1="${GREEN}|${RESET}${GREY}\u${RESET}${GREEN}|${RESET}${GREY}\h${RESET}${GREEN}|${RESET}${GREY}\w${RESET}${GREEN}|${RESET}\n\\$ "
 if [[ $UID -eq 0 ]]; then
-        PS1="${GREEN}|${RESET}${RED}\u${RESET}${GREEN}|${RESET}${RED}\h${RESET}${GREEN}|${RESET}${GREY}\w${RESET}${GREEN}|${RESET}\n\\$ "
+    PS1="${GREEN}|${RESET}${RED}\u${RESET}${GREEN}|${RESET}${RED}\h${RESET}${GREEN}|${RESET}${GREY}\w${RESET}${GREEN}|${RESET}\n\\$ "
 fi
 
 ulimit -c unlimited
@@ -26,6 +26,9 @@ ulimit -c unlimited
 #_____[command aliases]__________ #
 alias ls='ls -GF'
 alias ll='ls -GFlatr'
+alias gdb-gef='gdb -q -ex init-gef'
+alias gdb-peda='gdb -q -ex init-peda'
+alias gdb-pwndbg='gdb -q -ex init-pwndbg'
 
 # You're welcome
 function soocat {
