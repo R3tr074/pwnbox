@@ -12,6 +12,9 @@ RED=$ESC"31m"
 GREEN=$ESC"32m"
 BLUE=$ESC"34m"
 
+script_dir=$(dirname $0)
+rc_dir="${script_dir}/rc"
+
 # check if jq is installed
 which jq > /dev/null 2>&1
 if [[ $? -ne 0 ]]; then
@@ -47,19 +50,18 @@ docker run -it \
     pwnbox
 
 # Tar config files in rc and extract it into the container
-if [[ -d rc ]]; then
-    cd rc
-    if [[ -f rc.tar ]]; then
-        rm -f rc.tar
-    fi
+if [[ -d ${rc_dir} ]]; then
+    cd "${rc_dir}"
+    [[ -f rc.tar ]] && rm -f rc.tar
+
     for i in .*; do
         if [[ ! ${i} == "." && ! ${i} == ".." ]]; then
             tar rf rc.tar ${i}
         fi
     done
+    cat rc.tar | docker cp - ${ctf_name}:/root/
+    rm -f rc.tar
     cd - > /dev/null 2>&1
-    cat rc/rc.tar | docker cp - ${ctf_name}:/root/
-    rm -f rc/rc.tar
 else
     echo -e "${RED}No rc directory found. Nothing to copy to container.${RESET}"
 fi
