@@ -1,7 +1,5 @@
 #!/bin/bash
 
-## This script is just a copy of Dockerfile to run in your VPS or your machine(not recommended)
-
 yes | unminimize
 
 dpkg --add-architecture i386
@@ -83,11 +81,18 @@ python3 -m pip install --upgrade pwntools
 
 python3 -m pip install xortool
 
-git clone https://github.com/rizinorg/rizin /opt/rizin && \
-    cd /opt/rizin && \
-    meson build && \
-    ninja -C build && \
-    ninja -C build install
+git clone https://github.com/radareorg/radare2 /opt/radare2 && \
+    cd /opt/radare2 && \
+    ./sys/install.sh
+
+git clone https://github.com/R3tr074/echeck /opt/echeck && \
+    cd echeck && \
+    make && mv build/linux/x86_64/release/echeck /usr/bin \
+    ln -s /usr/bin/echeck /usr/bin/checksec
+
+git clone https://github.com/0vercl0k/rp /opt/rp && \
+    cd /opt/rp/src/build && \
+    chmod u+x ./build-release.sh && ./build-release.sh
 
 # install peda
 git clone https://github.com/longld/peda.git /opt/peda
